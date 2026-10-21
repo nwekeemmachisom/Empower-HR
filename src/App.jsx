@@ -15,6 +15,7 @@ import EmployeeProfile from "./pages/EmployeeProfile";
 import EmployeeAttendance from "./pages/EmployeeAttendance";
 import AdminDocuments from "./pages/AdminDocuments";
 import EmployeeDocuments from "./pages/EmployeeDocuments";
+import AdminManagement from "./pages/AdminManagement";
 
 export default function App() {
   const path = window.location.pathname;
@@ -32,6 +33,7 @@ export default function App() {
     if (path === "/employee/attendance") return "employee-attendance";
     if (path === "/employee/documents") return "employee-documents";
     if (path === "/admin/documents") return "admin-documents";
+    if (path === "/admin/management") return "admin-management";
     if (path === "/admin/dashboard") return "admin-dashboard";
     if (path === "/employee/dashboard") return "employee-dashboard";
 
@@ -55,6 +57,7 @@ export default function App() {
       "employee-attendance": "/employee/attendance",
       "employee-documents": "/employee/documents",
       "admin-documents": "/admin/documents",
+      "admin-management": "/admin/management",
     };
 
     const route = routes[next];
@@ -90,6 +93,7 @@ export default function App() {
   if (page === "employee-attendance") return <EmployeeAttendance go={go} />;
   if (page === "employee-documents") return <EmployeeDocuments go={go} />;
   if (page === "admin-documents") return <AdminDocuments go={go} />;
+  if (page === "admin-management") return <AdminManagement go={go} />;
 
   return <Landing go={go} />;
 }

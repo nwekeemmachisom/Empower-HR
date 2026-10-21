@@ -9,6 +9,7 @@ import {
   BarChart3,
   Building2,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import { getDashboardStats } from "../services/api";
 import { getDepartments } from "../services/departmentService";
@@ -148,6 +149,14 @@ export default function AdminDashboard({ go }) {
             <FileText />
             Documents
           </button>
+          <button
+            className="dash-nav"
+            onClick={() => go("admin-management")}
+          >
+            <ShieldCheck />
+            Admin Management
+          </button>
+
         </nav>
 
         <button className="logout" onClick={signOut}>

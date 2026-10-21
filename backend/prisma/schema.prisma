@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(EMPLOYEE)
+  employee     Employee?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  employees Employee[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Employee {
+  id           Int          @id @default(autoincrement())
+  userId       Int          @unique
+  departmentId Int?
+  firstName    String
+  lastName     String
+  phone        String?
+  address      String?
+  jobTitle     String?
+  dateJoined   DateTime?
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  attendances  Attendance[]
+  leaves       Leave[]
+  documents    Document[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Attendance {
+  id         Int              @id @default(autoincrement())
+  employeeId Int
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     AttendanceStatus @default(PRESENT)
+  employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now())
+
+  @@unique([employeeId, date])
+}
+
+model Leave {
+  id         Int         @id @default(autoincrement())
+  employeeId Int
+  leaveType  String
+  startDate  DateTime
+  endDate    DateTime
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+  employee   Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Document {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  name       String
+  fileUrl    String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}

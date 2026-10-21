@@ -155,9 +155,9 @@ export async function updateEmployee(id, data) {
   }
 
   if (data.departmentId !== undefined) {
-    updateData.department = data.departmentId
-      ? { connect: { id: Number(data.departmentId) } }
-      : { disconnect: true };
+    updateData.departmentId = data.departmentId
+      ? Number(data.departmentId)
+      : null;
   }
 
   return prisma.employee.update({

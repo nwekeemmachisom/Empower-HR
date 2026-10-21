@@ -14,6 +14,7 @@ import {
   BarChart3,
   Clock3,
   FileText,
+  Filter,
 } from "lucide-react";
 
 import {
@@ -31,8 +32,10 @@ export default function AdminEmployees({ go }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   const emptyForm = {
     email: "",
@@ -108,6 +111,8 @@ export default function AdminEmployees({ go }) {
       jobTitle: employee.jobTitle || "",
       departmentId: employee.departmentId
         ? String(employee.departmentId)
+        : employee.department?.id
+        ? String(employee.department.id)
         : "",
       dateJoined: employee.dateJoined
         ? employee.dateJoined.substring(0, 10)
@@ -146,7 +151,10 @@ export default function AdminEmployees({ go }) {
 
       if (!editing) {
         data.email = form.email.trim();
-        if (form.password.trim()) data.password = form.password;
+
+        if (form.password.trim()) {
+          data.password = form.password;
+        }
 
         await createEmployee(token, data);
       } else {
@@ -174,8 +182,22 @@ export default function AdminEmployees({ go }) {
       ${employee.department?.name || ""}
     `.toLowerCase();
 
-    return searchText.includes(search.toLowerCase());
+    const matchesSearch = searchText.includes(search.toLowerCase());
+
+    const matchesDepartment =
+      !departmentFilter ||
+      String(employee.department?.id || employee.departmentId || "") ===
+        String(departmentFilter);
+
+    return matchesSearch && matchesDepartment;
   });
+
+  function clearFilters() {
+    setSearch("");
+    setDepartmentFilter("");
+  }
+
+  const hasFilters = search.trim() || departmentFilter;
 
   return (
     <div className="dashboard-page">
@@ -193,10 +215,17 @@ export default function AdminEmployees({ go }) {
           id="mobile-menu-adminemployees"
           aria-label="Toggle dashboard navigation"
         />
-        <label className="dash-mobile-menu" htmlFor="mobile-menu-adminemployees">
-          <span className="dash-menu-icon" aria-hidden="true">☰</span>
+
+        <label
+          className="dash-mobile-menu"
+          htmlFor="mobile-menu-adminemployees"
+        >
+          <span className="dash-menu-icon" aria-hidden="true">
+            ☰
+          </span>
           <span>Menu</span>
         </label>
+
         <nav>
           <button
             className="dash-nav"
@@ -211,22 +240,34 @@ export default function AdminEmployees({ go }) {
             Employees
           </button>
 
-          <button className="dash-nav">
+          <button
+            className="dash-nav"
+            onClick={() => go("admin-departments")}
+          >
             <Building2 />
             Departments
           </button>
 
-          <button className="dash-nav">
+          <button
+            className="dash-nav"
+            onClick={() => go("admin-attendance")}
+          >
             <Clock3 />
             Attendance
           </button>
 
-          <button className="dash-nav">
+          <button
+            className="dash-nav"
+            onClick={() => go("admin-leave")}
+          >
             <CalendarDays />
             Leave
           </button>
 
-          <button className="dash-nav">
+          <button
+            className="dash-nav"
+            onClick={() => go("admin-documents")}
+          >
             <FileText />
             Documents
           </button>
@@ -265,7 +306,10 @@ export default function AdminEmployees({ go }) {
             </p>
           </div>
 
-          <button className="employee-add-button" onClick={openCreate}>
+          <button
+            className="employee-add-button"
+            onClick={openCreate}
+          >
             <Plus size={18} />
             Add employee
           </button>
@@ -295,21 +339,54 @@ export default function AdminEmployees({ go }) {
           <div className="employees-section-header">
             <div>
               <h2>Employee directory</h2>
+
               <p>
                 {filteredEmployees.length} employee
                 {filteredEmployees.length !== 1 ? "s" : ""} shown
               </p>
             </div>
 
-            <div className="employee-search">
-              <Search size={17} />
+            <div className="employee-filters">
+              <div className="employee-search">
+                <Search size={17} />
 
-              <input
-                type="text"
-                placeholder="Search employees..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+                <input
+                  type="text"
+                  placeholder="Search employees..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              <div className="employee-filter-select">
+                <Filter size={16} />
+
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  aria-label="Filter by department"
+                >
+                  <option value="">All departments</option>
+
+                  {departments.map((department) => (
+                    <option
+                      key={department.id}
+                      value={department.id}
+                    >
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {hasFilters && (
+                <button
+                  className="employee-clear-filter"
+                  onClick={clearFilters}
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
 
@@ -319,7 +396,9 @@ export default function AdminEmployees({ go }) {
               <span>Loading employees...</span>
             </div>
           ) : error ? (
-            <div className="employee-error">{error}</div>
+            <div className="employee-error">
+              {error}
+            </div>
           ) : filteredEmployees.length === 0 ? (
             <div className="employee-empty">
               <Users size={42} />
@@ -327,12 +406,19 @@ export default function AdminEmployees({ go }) {
               <h3>No employees found</h3>
 
               <p>
-                {search
-                  ? "Try a different search."
+                {hasFilters
+                  ? "Try changing or clearing your filters."
                   : "Add your first employee to get started."}
               </p>
 
-              {!search && (
+              {hasFilters ? (
+                <button
+                  className="employee-add-button"
+                  onClick={clearFilters}
+                >
+                  Clear filters
+                </button>
+              ) : (
                 <button
                   className="employee-add-button"
                   onClick={openCreate}
@@ -373,11 +459,13 @@ export default function AdminEmployees({ go }) {
 
                             <div>
                               <strong>
-                                {employee.firstName} {employee.lastName}
+                                {employee.firstName}{" "}
+                                {employee.lastName}
                               </strong>
 
                               <span>
-                                {employee.user?.email || "No email"}
+                                {employee.user?.email ||
+                                  "No email"}
                               </span>
                             </div>
                           </div>
@@ -427,13 +515,24 @@ export default function AdminEmployees({ go }) {
                         </td>
 
                         <td>
-                          <button
-                            className="employee-edit"
-                            onClick={() => openEdit(employee)}
-                          >
-                            <Pencil size={15} />
-                            Edit
-                          </button>
+                          <div className="employee-actions">
+                            <button
+                              className="employee-view-button"
+                              onClick={() => setViewing(employee)}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="employee-edit"
+                              onClick={() =>
+                                openEdit(employee)
+                              }
+                            >
+                              <Pencil size={15} />
+                              Edit
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -445,6 +544,138 @@ export default function AdminEmployees({ go }) {
         </section>
       </main>
 
+      {/* VIEW EMPLOYEE PROFILE */}
+      {viewing && (
+        <div
+          className="employee-view-overlay"
+          onClick={() => setViewing(null)}
+        >
+          <div
+            className="employee-view-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="employee-view-header">
+              <div className="employee-view-profile">
+                <div className="employee-view-avatar">
+                  {`${viewing.firstName?.[0] || ""}${
+                    viewing.lastName?.[0] || ""
+                  }`.toUpperCase()}
+                </div>
+
+                <div>
+                  <h2>
+                    {viewing.firstName} {viewing.lastName}
+                  </h2>
+
+                  <p>
+                    {viewing.jobTitle || "Employee"}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                className="employee-view-close"
+                onClick={() => setViewing(null)}
+                aria-label="Close employee profile"
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            <div className="employee-view-body">
+              <div className="employee-view-grid">
+                <div className="employee-view-item">
+                  <span className="employee-view-item-label">
+                    Employee ID
+                  </span>
+
+                  <span className="employee-view-item-value">
+                    #{viewing.id}
+                  </span>
+                </div>
+
+                <div className="employee-view-item">
+                  <span className="employee-view-item-label">
+                    Department
+                  </span>
+
+                  <span className="employee-view-item-value">
+                    {viewing.department?.name || "Not assigned"}
+                  </span>
+                </div>
+
+                <div className="employee-view-item">
+                  <span className="employee-view-item-label">
+                    Email
+                  </span>
+
+                  <span className="employee-view-item-value">
+                    {viewing.user?.email || "Not available"}
+                  </span>
+                </div>
+
+                <div className="employee-view-item">
+                  <span className="employee-view-item-label">
+                    Phone
+                  </span>
+
+                  <span className="employee-view-item-value">
+                    {viewing.phone || "Not provided"}
+                  </span>
+                </div>
+
+                <div className="employee-view-item">
+                  <span className="employee-view-item-label">
+                    Date joined
+                  </span>
+
+                  <span className="employee-view-item-value">
+                    {viewing.dateJoined
+                      ? new Date(
+                          viewing.dateJoined
+                        ).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "Not provided"}
+                  </span>
+                </div>
+
+                <div className="employee-view-item">
+                  <span className="employee-view-item-label">
+                    Job title
+                  </span>
+
+                  <span className="employee-view-item-value">
+                    {viewing.jobTitle || "Employee"}
+                  </span>
+                </div>
+
+                <div className="employee-view-item full">
+                  <span className="employee-view-item-label">
+                    Address
+                  </span>
+
+                  <span className="employee-view-item-value">
+                    {viewing.address || "Not provided"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="employee-view-footer">
+                <button
+                  className="employee-view-done"
+                  onClick={() => setViewing(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL */}
       {showForm && (
         <div className="employee-modal-overlay">
@@ -452,7 +683,9 @@ export default function AdminEmployees({ go }) {
             <div className="employee-modal-header">
               <div>
                 <span className="section-label">
-                  {editing ? "EMPLOYEE PROFILE" : "NEW EMPLOYEE"}
+                  {editing
+                    ? "EMPLOYEE PROFILE"
+                    : "NEW EMPLOYEE"}
                 </span>
 
                 <h2>

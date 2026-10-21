@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ShieldCheck, Users, UserPlus, Loader2 } from "lucide-react";
-import { getAdmins, createAdmin } from "../services/adminService";
+import { ArrowLeft, ShieldCheck, Users, UserPlus, Loader2, Trash2 } from "lucide-react";
+import { getAdmins, createAdmin, deleteAdmin } from "../services/adminService";
 
 export default function AdminManagement({ go }) {
   const token = localStorage.getItem("hrms_token");
@@ -32,6 +32,28 @@ export default function AdminManagement({ go }) {
     }
     loadAdmins();
   }, [token, go, loadAdmins]);
+
+  async function handleDeleteAdmin(admin) {
+    const confirmed = window.confirm(
+      `Remove administrator account for ${admin.email}? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+    setMessage("");
+
+    try {
+      setSaving(true);
+      const result = await deleteAdmin(token, admin.id);
+      setMessage(result.message || "Administrator removed successfully.");
+      await loadAdmins();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -151,7 +173,7 @@ export default function AdminManagement({ go }) {
             <div className="employee-table-wrapper">
               <table className="employee-table">
                 <thead>
-                  <tr><th>EMAIL</th><th>ROLE</th><th>CREATED</th></tr>
+                  <tr><th>EMAIL</th><th>ROLE</th><th>CREATED</th><th>ACTION</th></tr>
                 </thead>
                 <tbody>
                   {admins.map((admin) => (
@@ -162,6 +184,21 @@ export default function AdminManagement({ go }) {
                         {new Date(admin.createdAt).toLocaleDateString("en-GB", {
                           day: "2-digit", month: "short", year: "numeric",
                         })}
+                      </td>
+                      <td>
+                        {admin.id === Number(JSON.parse(localStorage.getItem("hrms_user") || "{}").id) ? (
+                          <span className="employee-role">CURRENT ADMIN</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="admin-remove-button"
+                            onClick={() => handleDeleteAdmin(admin)}
+                            disabled={saving}
+                          >
+                            <Trash2 size={15} />
+                            Remove
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

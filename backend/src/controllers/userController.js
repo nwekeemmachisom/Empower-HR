@@ -133,3 +133,64 @@ export async function createAdmin(req, res) {
     });
   }
 }
+
+export async function deleteAdmin(req, res) {
+  try {
+    const adminId = Number(req.params.id);
+
+    if (!Number.isInteger(adminId) || adminId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid administrator ID",
+      });
+    }
+
+    // Never allow an administrator to delete their own account.
+    if (adminId === req.user.userId) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete your own administrator account",
+      });
+    }
+
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (!admin || admin.role !== "ADMIN") {
+      return res.status(404).json({
+        success: false,
+        message: "Administrator not found",
+      });
+    }
+
+    const adminCount = await prisma.user.count({
+      where: { role: "ADMIN" },
+    });
+
+    // Never allow the system to have zero administrators.
+    if (adminCount <= 1) {
+      return res.status(400).json({
+        success: false,
+        message: "The last administrator account cannot be deleted",
+      });
+    }
+
+    await prisma.user.delete({
+      where: { id: adminId },
+    });
+
+    return res.json({
+      success: true,
+      message: "Administrator removed successfully",
+    });
+  } catch (error) {
+    console.error("Delete admin error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to remove administrator",
+    });
+  }
+}
